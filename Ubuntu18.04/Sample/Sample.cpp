@@ -13,18 +13,34 @@ void UpgradeStateCallback(int status, int params);
 void DeviceStateCallback(int params);
 void ShowMenu(void);
 
+enum DeviceState{
+	HotPlugIn = -2,
+	HotPlugOut = -1,
+	None = 0,
+	Opened = 1,
+	Upgraded = 2,
+};
 
 bool g_isRunning = true;
-int32_t g_deviceState = 0; //-2:plug in; -1:plug out 0:none; 1:open; 2:upgrade
+DeviceState g_deviceState = None;
 bool g_showPeopleInfo = false;
 VzDeviceHandler g_deviceHandle = 0;
-
+bool g_bopenDoor = false;
+bool g_blowPower = false;
+bool g_bShowImg = true;
+			
 int main(int argc, char *argv[])
 {
 	Vz_PCInitialize();
 	cout<<"Vz_Initialize"<<endl;
 
+OPEN:
 	g_isRunning = InitDevice();
+	if (false == g_isRunning)
+	{
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+		goto OPEN;
+	}
 
 	ShowMenu();
 	VzPeopleInfoCount peopleInfoCount = {0};
@@ -32,12 +48,12 @@ int main(int argc, char *argv[])
 	while(g_isRunning)
 	{
 		
-		if( -1 == g_deviceState)
+		if( HotPlugOut == g_deviceState)
 		{
 			Vz_PCCloseDevice(&g_deviceHandle);
-			g_deviceState = 0;
+			g_deviceState = None;
 		}
-		else if(1 == g_deviceState)
+		else if(Opened == g_deviceState)
 		{
 			peopleInfoCount = {0};
 
@@ -48,12 +64,18 @@ int main(int argc, char *argv[])
 				imageMat = cv::Mat(peopleInfoCount.frame.height,  peopleInfoCount.frame.width,  CV_8UC1,  peopleInfoCount.frame.pFrameData);
 					cv::imshow("ShowImg", imageMat);
 			}
+			else if((true == g_bopenDoor && VzReturnStatus::VzRetDoorWasOpend == result)
+					|| (VzReturnStatus::VzRetOK == result)
+					|| (true == g_blowPower))
+			{ 
+				//do nothing 
+			}
 			else
 			{
 					cout << "Vz_PCGetPeopleInfoCount error:" << result<<endl;
 			}
 		}
-		else if(-2 == g_deviceState)
+		else if(HotPlugIn == g_deviceState)
 		{
 			InitDevice();
 		}
@@ -73,7 +95,7 @@ int main(int argc, char *argv[])
             cout<<path<<endl;
 			if(VzReturnStatus::VzRetOK == Vz_PCStartUpgradeFirmWare(g_deviceHandle, path))
 			{
-				g_deviceState = 2;
+				g_deviceState = Upgraded;
 				cout<< "start upgrade ok"<<endl;
 			}
 			else
@@ -86,18 +108,16 @@ int main(int argc, char *argv[])
 		case 's':
 		{
 			//Turn image display on and off
-			static bool bShowImg = false;
-			Vz_PCSetShowImg(bShowImg);
-			bShowImg = !bShowImg;
+			g_bShowImg = !g_bShowImg;
+			Vz_PCSetShowImg(g_bShowImg);
 		}
 		break;
 		case 'L':
 		case 'l':
 		{
 			//Entering and exiting low-power mode
-			static bool blowPower = true;
-			Vz_PCSetLowpowerModeEnable(g_deviceHandle, blowPower);
-			blowPower = !blowPower;
+			g_blowPower = !g_blowPower;
+			Vz_PCSetLowpowerModeEnable(g_deviceHandle, g_blowPower);
 		}
 		break;
 		case 'H':
@@ -108,16 +128,16 @@ int main(int argc, char *argv[])
             uint16_t  cameraHeight = 1900;
             cin >> cameraHeight;
             cout<<"camera height:"<<cameraHeight<<endl;
-			cout<<"SetCameraHeight: "<< (VzReturnStatus::VzRetOK == Vz_PCSetCameraHeight(cameraHeight) ? "OK":"NG");
+			VzReturnStatus result = Vz_PCSetCameraHeight(cameraHeight);
+			cout<<"SetCameraHeight: "<< (VzReturnStatus::VzRetOK == result ? "OK":"NG")<<endl;;
 		}
 		break;
 		case 'O':
 		case 'o':
 		{	
 			//Setting the opening and closing state of the refrigerator door
-			static bool bopenDoor = true;
-			Vz_PCSetDoorOpenState(bopenDoor);
-			bopenDoor = !bopenDoor;
+			g_bopenDoor = !g_bopenDoor;
+			Vz_PCSetDoorOpenState(g_bopenDoor);
 		}
 		break;
 		case 'D':
@@ -128,7 +148,8 @@ int main(int argc, char *argv[])
             uint16_t  threshold = 3;
             cin >> threshold;
             cout<<"dwell time:"<<threshold<<endl;
-			cout<<"SetDwelltime:"<< (VzReturnStatus::VzRetOK == Vz_PCSetDwelltimeThreshold(threshold) ? "OK":"NG");
+			VzReturnStatus result = Vz_PCSetDwelltimeThreshold(threshold);
+			cout<<"SetDwelltime:"<< (VzReturnStatus::VzRetOK ==  result ? "OK":"NG")<<endl;;
 		}
 		break;
 		case 'P':
@@ -189,7 +210,7 @@ void UpgradeStateCallback(int status, int params)
 {
     if (-1 == params){
         cout<<"status:"<<status<<", upgrade failed,wait for the device to reboot"<<endl;
-		g_deviceState = 0;
+		g_deviceState = None;
     }else{
         switch (status)
         {
@@ -231,7 +252,7 @@ void UpgradeStateCallback(int status, int params)
             break;
         default:
             cout<<"StatusCallback: other stage:"<<status<<endl;
-			g_deviceState = 0;
+			g_deviceState = None;
             break;
         }
     }
@@ -240,18 +261,22 @@ void UpgradeStateCallback(int status, int params)
 
 void DeviceStateCallback(int status)
 { 
-	if(2 == g_deviceState)
+	if(Upgraded == g_deviceState)
 	{
 		return;
 	}
-	if(0 != status)
+
+	//hot plug out
+	if(VZDEVICE_HotPlugIN != status)
 	{
-		g_deviceState = -1;
+		g_deviceState = HotPlugOut;
 	}
-	else
+	else //hot plug in
 	{
-		g_deviceState = -2;
+		g_deviceState = HotPlugIn;
 	}
+
+	cout << "status: " << status << " g_deviceState:" << g_deviceState <<endl;
 }
 
 bool InitDevice()
@@ -259,12 +284,19 @@ bool InitDevice()
 	VzReturnStatus status = Vz_PCOpenDevice(&g_deviceHandle);
 	if (status != VzReturnStatus::VzRetOK)
 	{
-		cout << "Vz_PCOpenDevice failed: " << status << endl;
+		if(VzReturnStatus::VzRetNoDeviceConnected == status)
+		{
+			cout << "Please connect the device first!" << endl;
+		}
+		else
+		{
+			cout << "Vz_PCOpenDevice failed: " << status << endl;
+		}
 		return false;
 	}
-	g_deviceState = 1;
+	g_deviceState = Opened;
 	Vz_PCRegDeviceHotplugStateCallbackFunc(DeviceStateCallback);
-	Vz_PCSetShowImg(true);
+	Vz_PCSetShowImg(g_bShowImg);
 
 	return true;
 }

@@ -65,6 +65,12 @@ typedef enum
         VZDEVICE_UPGRADE_DONE = 0x08,             //!< The device upgrade completed.
 }VzDeviceStatus;
 
+typedef enum
+{
+        VZDEVICE_HotPlugIN = 0x00,                //!< hot plug in 
+        VZDEVICE_HotPlugOUT = 0x01,               //!< hot plug out 
+}VzHotPlugState;
+
 struct Device;
 typedef Device* VzDeviceHandler;
 
