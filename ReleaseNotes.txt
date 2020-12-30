@@ -1,3 +1,6 @@
+Ver1.1.2
+1.Using the opencv static library in the SDK
+2.Using OpenCV4.5.1 dynamic library in Sample
 
 Ver1.1.1
 1.support wdr mode

@@ -44,9 +44,9 @@ typedef enum{
         VzRetCurrentVersionNotSupport   = -16,  //!< This feature is not supported in the current version.
         VzRetUpgradeImgError            = -17,  //!< There is an error in the upgrade file.
         VzRetUpgradeImgPathTooLong      = -18,  //!< Upgrade file path length greater than 260.
-		VzRetUpgradeCallbackNotSet		= -19,  //!< Ps2_SetUpgradeStatusCallback is not called.
-		VzRetNoAdapterConnected			= -100,	//!< There is no adapter connected.
-        VzRetDoorWasOpend			    = -101,	//!< The door has been opened.
+	VzRetUpgradeCallbackNotSet	= -19,  //!< Ps2_SetUpgradeStatusCallback is not called.
+	VzRetNoAdapterConnected		= -100,	//!< There is no adapter connected.
+        VzRetDoorWasOpend		= -101,	//!< The door has been opened.
 
 
 	VzRetOthers = -255,	             //!< An unknown error occurred.
