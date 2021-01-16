@@ -43,8 +43,15 @@ VZENSE_C_API_EXPORT VzReturnStatus Vz_PCOpenDevice(VzDeviceHandler* pDeviceHandl
 VZENSE_C_API_EXPORT VzReturnStatus Vz_PCCloseDevice(VzDeviceHandler* pDeviceHandler);
 
 /**
-* @brief 		Sets the mounting height of the camera.
-* @param[in]	height:	    camera mounting height(1900mm~2300mm).
+* @brief 		Set the furthest detection distance. This function is called before Vz_OpenDevice and can take effect immediately. Called after Vz_OpenDevice, it takes effect the next time the application is started.
+* @param[in]	maxValue:	the furthest detection distance(500mm~5100mm).
+* @return: 		::VzRetOK   if the function succeeded, or one of the error values defined by ::VzReturnStatus.
+*/
+VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetMaxDetectDistance(const int maxValue);
+
+/**
+* @brief 		Sets the mounting height of the camera. This function is called before Vz_OpenDevice and can take effect immediately. Called after Vz_OpenDevice, it takes effect the next time the application is started.
+* @param[in]	height:	    camera mounting height(1900mm~2100mm).
 * @return: 		::VzRetOK   if the function succeeded, or one of the error values defined by ::VzReturnStatus.
 */
 VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetCameraHeight(const uint16_t height);
@@ -78,7 +85,7 @@ VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetLowpowerModeEnable(const VzDeviceHand
 *  @param[In]   isOpened:  true means the door is open, false means the door is not open.
 *  @return:     ::VzRetOK	if the function succeeded, or one of the error values defined by ::VzReturnStatus.
 */
-VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetDoorOpenState(bool isOpened);
+VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetDoorOpenState(const VzDeviceHandler deviceHandler, bool isOpened);
 
 /**
 *  @brief       Registers the Camera State Callback Function
@@ -109,6 +116,5 @@ VZENSE_C_API_EXPORT VzReturnStatus Vz_PCRegUpgradeStateCallbackFunc(const VzDevi
 *  @return:     ::VzRetOK	if the function succeeded, or one of the error values defined by ::VzReturnStatus.
 */
 VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetShowImg(bool isShow);
-
 
 #endif //VPEOPLECOUNTAPI_H

@@ -44,12 +44,12 @@ typedef enum{
         VzRetCurrentVersionNotSupport   = -16,  //!< This feature is not supported in the current version.
         VzRetUpgradeImgError            = -17,  //!< There is an error in the upgrade file.
         VzRetUpgradeImgPathTooLong      = -18,  //!< Upgrade file path length greater than 260.
-	VzRetUpgradeCallbackNotSet	= -19,  //!< Ps2_SetUpgradeStatusCallback is not called.
-	VzRetNoAdapterConnected		= -100,	//!< There is no adapter connected.
+		VzRetUpgradeCallbackNotSet	= -19,  //!< Ps2_SetUpgradeStatusCallback is not called.
+		VzRetNoAdapterConnected		= -100,	//!< There is no adapter connected.
         VzRetDoorWasOpend		= -101,	//!< The door has been opened.
 
 
-	VzRetOthers = -255,	             //!< An unknown error occurred.
+		VzRetOthers = -255,	             //!< An unknown error occurred.
 }VzReturnStatus;
 
 typedef enum
@@ -87,6 +87,7 @@ typedef struct
 	uint16_t headPostion[2];        //Pixel coordinates of the center point of the head of the person identified from the image
 	uint16_t distance;		        //The distance of the person identified from the image from the device(mm)
 	uint16_t dwell_time;            //The time a person identified from the image dwells in front of the device(second)
+	uint16_t duration_time;         //The time a person identified from the image since detected(second)
 } VzPeopleInfo;
 
 typedef struct

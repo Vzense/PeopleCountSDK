@@ -1,3 +1,8 @@
+Ver1.2.4
+1.Optimize the recognition of the human body
+2.Add Vz_PCSetMaxDetectDistance
+3.Change Vz_PCSetDoorOpenState function to turn off the laser light when opening the door and turn on the laser light when closing the door
+
 Ver1.1.2
 1.Using the opencv static library in the SDK
 2.Using OpenCV4.5.1 dynamic library in Sample
