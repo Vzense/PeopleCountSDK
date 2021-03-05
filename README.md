@@ -1,4 +1,4 @@
-# CSI100_PeopleCountSDK
+# PeopleCountSDK
 The goal of this project is to help developers easily use PeopleCountSDK.
 
 
@@ -12,9 +12,4 @@ The goal of this project is to help developers easily use PeopleCountSDK.
 ```bash
 ./install.sh
 ```
-## Supported Devices
-
-- CSI100
-- DCAM500
-
 
