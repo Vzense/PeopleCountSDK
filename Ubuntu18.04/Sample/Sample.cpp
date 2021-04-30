@@ -7,9 +7,6 @@
 using namespace std;
 using namespace cv;
 
-bool InitDevice();
-void UpgradeStateCallback(int status, int params);
-void DeviceStateCallback(int params);
 void ShowMenu(void);
 
 enum DeviceState
@@ -18,11 +15,149 @@ enum DeviceState
 	HotPlugOut = -1,
 	None = 0,
 	Opened = 1,
-	Upgraded = 2,
+	Upgrading = 2,
+	Upgraded = 3
+};
+
+class Sensor
+{
+private:
+	DeviceState m_DeviceState = None;
+
+public:
+	static void HotPlugStateCallback(void *pUserData, int state)
+	{
+		Sensor *p = (Sensor *)pUserData;
+		if (p)
+		{
+			p->HandleHotplugCallback(state);
+		}
+	}
+
+	static void UpgradeStateCallback(void *pUserData, int status, int params)
+	{
+		Sensor *p = (Sensor *)pUserData;
+		if (p)
+		{
+			p->HandleUpgradeStateCallback(status, params);
+		}
+	}
+
+	void registCallback()
+	{
+		Vz_PCRegDeviceHotplugStateCallbackFunc(HotPlugStateCallback, this);
+	}
+
+	void HandleHotplugCallback(int state)
+	{
+		if (Upgraded == m_DeviceState)
+		{
+			return;
+		}
+
+		//hot plug out
+		if (VZDEVICE_HotPlugIN != state)
+		{
+			m_DeviceState = HotPlugOut;
+		}
+		else //hot plug in
+		{
+			m_DeviceState = HotPlugIn;
+		}
+
+		cout << "state: " << state << " m_DeviceState:" << m_DeviceState << endl;
+	}
+
+	void HandleUpgradeStateCallback(int status, int params)
+	{
+		if (-1 == params)
+		{
+			cout << "status:" << status << ", upgrade failed,wait for the device to reboot" << endl;
+			m_DeviceState = None;
+		}
+		else
+		{
+			switch (status)
+			{
+			case VZDEVICE_UPGRADE_IMG_COPY:
+			{
+				cout << "StatusCallback: DEVICE_PRE_UPGRADE_IMG_COPY status:" << (-1 == params ? "NG" : "OK") << endl;
+			}
+			break;
+			case VZDEVICE_UPGRADE_IMG_CHECK_DOING:
+			{
+				cout << "StatusCallback: DEVICE_UPGRADE_IMG_CHECK_DOING status:" << params << endl;
+			}
+			break;
+			case VZDEVICE_UPGRADE_IMG_CHECK_DONE:
+			{
+				cout << "StatusCallback: DEVICE_PRE_UPGRADE_IMG_COPY status:" << (-1 == params ? "NG" : "OK") << endl;
+			}
+			break;
+			case VZDEVICE_UPGRADE_DOING:
+			{
+				cout << "StatusCallback: DEVICE_UPGRADE_UPGRAD_DOING percent:" << params << "%" << endl;
+			}
+			break;
+			case VZDEVICE_UPGRADE_RECHECK_DOING:
+			{
+				cout << "StatusCallback: DEVICE_UPGRADE_RECHECK_DOING" << (-1 == params ? "NG" : "OK") << endl;
+			}
+			break;
+			case VZDEVICE_UPGRADE_RECHECK_DONE:
+			{
+				cout << "StatusCallback: DEVICE_UPGRADE_RECHECK_DONE:" << (-1 == params ? "NG" : "OK") << endl;
+			}
+			break;
+			case VZDEVICE_UPGRADE_DONE:
+			{
+				cout << "StatusCallback: DEVICE_UPGRADE_UPGRAD_DONE:" << (-1 == params ? "NG" : "OK") << ",wait for the device to reboot" << endl;
+				m_DeviceState = Upgraded;
+			}
+			break;
+			default:
+				cout << "StatusCallback: other stage:" << status << endl;
+				m_DeviceState = None;
+				break;
+			}
+		}
+	}
+
+	void SetDeviceState(DeviceState state)
+	{
+		m_DeviceState = state;
+	}
+
+	DeviceState GetDeviceState()
+	{
+		return m_DeviceState;
+	}
+
+	bool InitDevice(VzDeviceHandler* pDeviceHandler)
+	{
+		VzReturnStatus status = Vz_PCOpenDevice(pDeviceHandler);
+		if (status != VzReturnStatus::VzRetOK)
+		{
+			if (VzReturnStatus::VzRetNoDeviceConnected == status)
+			{
+				cout << "Please connect the device first!" << endl;
+			}
+			else
+			{
+				cout << "Vz_PCOpenDevice failed: " << status << endl;
+			}
+			return false;
+		}
+		Vz_PCRegUpgradeStateCallbackFunc(*pDeviceHandler, UpgradeStateCallback, this);
+
+		ShowMenu();
+		m_DeviceState = Opened;
+
+		return true;
+	}
 };
 
 bool g_isRunning = true;
-DeviceState g_deviceState = None;
 bool g_showPeopleInfo = false;
 VzDeviceHandler g_deviceHandle = 0;
 bool g_bopenDoor = false;
@@ -34,8 +169,13 @@ int main(int argc, char *argv[])
 	Vz_PCInitialize();
 	cout << "Vz_Initialize" << endl;
 
+	Vz_PCSetShowImg(g_bShowImg);
+
+	Sensor s;
+	s.registCallback();
+
 OPEN:
-	g_isRunning = InitDevice();
+	g_isRunning = s.InitDevice(&g_deviceHandle);
 	if (false == g_isRunning)
 	{
 		std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -47,12 +187,17 @@ OPEN:
 	while (g_isRunning)
 	{
 
-		if (HotPlugOut == g_deviceState)
+		if (HotPlugOut == s.GetDeviceState())
 		{
 			Vz_PCCloseDevice(&g_deviceHandle);
-			g_deviceState = None;
+			s.SetDeviceState(None);
 		}
-		else if (Opened == g_deviceState)
+		else if(Upgraded == s.GetDeviceState())
+		{
+			g_isRunning = false;
+			break;
+		}
+		else if (Opened == s.GetDeviceState())
 		{
 			peopleInfoCount = {0};
 
@@ -74,9 +219,9 @@ OPEN:
 				cout << "Vz_PCGetPeopleInfoCount error:" << result << endl;
 			}
 		}
-		else if (HotPlugIn == g_deviceState)
+		else if (HotPlugIn == s.GetDeviceState())
 		{
-			InitDevice();
+			s.InitDevice(&g_deviceHandle);
 		}
 
 		unsigned char key = waitKey(1);
@@ -86,13 +231,12 @@ OPEN:
 		case 'u':
 		{
 			//Test camera firmware upgrade
-			//[Warnning]:Only Firmware_DCAMBOE_20201110_nand_b03 and later firmware support the upgrade. Older firmware versions do not support the upgrade.
-			Vz_PCRegUpgradeStateCallbackFunc(g_deviceHandle, UpgradeStateCallback);
-			char path[256] = "./Firmware_CSI100_20210116_nand_B12_15.img";
+			//[Warnning]:Only Firmware_20201110_nand_b03 and later firmware support the upgrade. Older firmware versions do not support the upgrade.
+			char path[256] = "./Firmware_20210116_nand_B12_15.img";
 			cout << path << endl;
 			if (VzReturnStatus::VzRetOK == Vz_PCStartUpgradeFirmWare(g_deviceHandle, path))
 			{
-				g_deviceState = Upgraded;
+				s.SetDeviceState(Upgrading);
 				cout << "start upgrade ok" << endl;
 			}
 			else
@@ -214,103 +358,4 @@ void ShowMenu(void)
 	cout << "P/p: Save image once" << endl;
 	cout << "M/m: Show menu" << endl;
 	return;
-}
-
-void UpgradeStateCallback(int status, int params)
-{
-	if (-1 == params)
-	{
-		cout << "status:" << status << ", upgrade failed,wait for the device to reboot" << endl;
-		g_deviceState = None;
-	}
-	else
-	{
-		switch (status)
-		{
-		case VZDEVICE_UPGRADE_IMG_COPY:
-		{
-			cout << "StatusCallback: DEVICE_PRE_UPGRADE_IMG_COPY status:" << (-1 == params ? "NG" : "OK") << endl;
-		}
-		break;
-		case VZDEVICE_UPGRADE_IMG_CHECK_DOING:
-		{
-			cout << "StatusCallback: DEVICE_UPGRADE_IMG_CHECK_DOING status:" << params << endl;
-		}
-		break;
-		case VZDEVICE_UPGRADE_IMG_CHECK_DONE:
-		{
-			cout << "StatusCallback: DEVICE_PRE_UPGRADE_IMG_COPY status:" << (-1 == params ? "NG" : "OK") << endl;
-		}
-		break;
-		case VZDEVICE_UPGRADE_DOING:
-		{
-			cout << "StatusCallback: DEVICE_UPGRADE_UPGRAD_DOING percent:" << params << "%" << endl;
-		}
-		break;
-		case VZDEVICE_UPGRADE_RECHECK_DOING:
-		{
-			cout << "StatusCallback: DEVICE_UPGRADE_RECHECK_DOING" << (-1 == params ? "NG" : "OK") << endl;
-		}
-		break;
-		case VZDEVICE_UPGRADE_RECHECK_DONE:
-		{
-			cout << "StatusCallback: DEVICE_UPGRADE_RECHECK_DONE:" << (-1 == params ? "NG" : "OK") << endl;
-		}
-		break;
-		case VZDEVICE_UPGRADE_DONE:
-		{
-			cout << "StatusCallback: DEVICE_UPGRADE_UPGRAD_DONE:" << (-1 == params ? "NG" : "OK") << ",wait for the device to reboot" << endl;
-			g_isRunning = false;
-		}
-		break;
-		default:
-			cout << "StatusCallback: other stage:" << status << endl;
-			g_deviceState = None;
-			break;
-		}
-	}
-}
-
-void DeviceStateCallback(int status)
-{
-	if (Upgraded == g_deviceState)
-	{
-		return;
-	}
-
-	//hot plug out
-	if (VZDEVICE_HotPlugIN != status)
-	{
-		g_deviceState = HotPlugOut;
-	}
-	else //hot plug in
-	{
-		g_deviceState = HotPlugIn;
-	}
-
-	cout << "status: " << status << " g_deviceState:" << g_deviceState << endl;
-}
-
-bool InitDevice()
-{
-	VzReturnStatus status = Vz_PCOpenDevice(&g_deviceHandle);
-	if (status != VzReturnStatus::VzRetOK)
-	{
-		if (VzReturnStatus::VzRetNoDeviceConnected == status)
-		{
-			cout << "Please connect the device first!" << endl;
-		}
-		else
-		{
-			cout << "Vz_PCOpenDevice failed: " << status << endl;
-		}
-		return false;
-	}
-
-	ShowMenu();
-	g_deviceState = Opened;
-	Vz_PCRegDeviceHotplugStateCallbackFunc(DeviceStateCallback);
-	Vz_PCSetShowImg(g_bShowImg);
-
-	return true;
 }

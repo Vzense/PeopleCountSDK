@@ -88,6 +88,7 @@ typedef struct
 	uint16_t distance;		        //The distance of the person identified from the image from the device(mm)
 	uint16_t dwell_time;            //The time a person identified from the image dwells in front of the device(second)
 	uint16_t duration_time;         //The time a person identified from the image since detected(second)
+        uint16_t id;
 } VzPeopleInfo;
 
 typedef struct
@@ -101,17 +102,18 @@ typedef struct
 
 /**
 * @brief device firmware upgrade state callback function
+* @param[In]    pUserData: user data which was passed via Vz_PCRegUpgradeStateCallbackFunc
 * @param[In]    status: device state. Pass in the applicable value defined by ::VzDeviceStatus
 * @param[In]    params: result of the execution of the current state
 */
-typedef void(*PtrUpgradeStateCallback)(int status, int params);
+typedef void(*PtrUpgradeStateCallback)(void* pUserData, int status, int params);
 
 /**
 * @brief hotplug status callback function
-* uri    return the uri of the Device, See ::PsDeviceInfo
-* state  0:device added , 1:device removed
+* @param[In]    pUserData: user data which was passed via Vz_PCRegDeviceHotplugStateCallbackFunc
+* @param[In]    state  0:device added , 1:device removed
 */
-typedef void(*PtrDeviceHotplugStateCallback)(int state);
+typedef void(*PtrDeviceHotplugStateCallback)(void* pUserData, int state);
 
 
 #endif //VTYPES_H

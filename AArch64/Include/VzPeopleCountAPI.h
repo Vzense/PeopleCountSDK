@@ -90,9 +90,10 @@ VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetDoorOpenState(const VzDeviceHandler d
 /**
 *  @brief       Registers the Camera State Callback Function
 * @param[in]	pCallback:	The Pointer to the callback function. See ::PtrDeviceHotplugStateCallback 
+* @param[in]	pUserData:       The Pointer to the user data which will be passed to the app via PtrDeviceHotplugStateCallback.
 * @return 		::PsRetOK	if the function succeeded, or one of the error values defined by ::PsReturnStatus.
 */
-VZENSE_C_API_EXPORT VzReturnStatus Vz_PCRegDeviceHotplugStateCallbackFunc(const PtrDeviceHotplugStateCallback pCallback);
+VZENSE_C_API_EXPORT VzReturnStatus Vz_PCRegDeviceHotplugStateCallbackFunc(const PtrDeviceHotplugStateCallback pCallback, const void* pUserData);
 
 /**
 *  @brief       Starts upgrading device firmware
@@ -105,10 +106,11 @@ VZENSE_C_API_EXPORT VzReturnStatus Vz_PCStartUpgradeFirmWare(const VzDeviceHandl
 /**
 *  @brief       Registers the callback function to return the device firmware update status
 * @param[in]	deviceHandler:   The handler of the device on which to return to firmware upgrade status. 
-* @param[in]	pCallback:       The Pointer to the callback function. See ::PtrUpgradeStateCallback 
+* @param[in]	pCallback:       The Pointer to the callback function. See ::PtrUpgradeStateCallback
+* @param[in]	pUserData:       The Pointer to the user data which will be passed to the app via PtrUpgradeStateCallback.
 * @return 		::PsRetOK       if the function succeeded, or one of the error values defined by ::PsReturnStatus.
 */
-VZENSE_C_API_EXPORT VzReturnStatus Vz_PCRegUpgradeStateCallbackFunc(const VzDeviceHandler deviceHandler, const PtrUpgradeStateCallback pCallback);
+VZENSE_C_API_EXPORT VzReturnStatus Vz_PCRegUpgradeStateCallbackFunc(const VzDeviceHandler deviceHandler, const PtrUpgradeStateCallback pCallback, const void* pUserData);
 
 /**
 *  @brief       Sets whether to return images for debugging
