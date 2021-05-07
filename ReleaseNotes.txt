@@ -1,3 +1,6 @@
+Ver1.2.6
+Change id in VzPeopleInfo struct
+
 Ver1.2.5
 1.add id in VzPeopleInfo struct;
 2.add pUserData in API Vz_PCRegDeviceHotplugStateCallbackFunc and Vz_PCRegUpgradeStateCallbackFunc.
