@@ -88,8 +88,8 @@ typedef struct
 	uint16_t distance;		        //The distance of the person identified from the image from the device(mm)
 	uint16_t dwell_time;            //The time a person identified from the image dwells in front of the device(second)
 	uint16_t duration_time;         //The time a person identified from the image since detected(second)
-	uint16_t reserved;
-	uint32_t id;
+    uint16_t reserved;				//Reserved Fields
+    uint32_t id;					//Identifier of the detected person
 } VzPeopleInfo;
 
 typedef struct

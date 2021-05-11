@@ -8,6 +8,7 @@ using namespace std;
 using namespace cv;
 
 void ShowMenu(void);
+void DrawPersonInfo2Img(const Mat& img, const VzPeopleInfo& peopleInfo);
 
 enum DeviceState
 {
@@ -206,6 +207,10 @@ OPEN:
 				&& 0 != peopleInfoCount.frame.pFrameData)
 			{
 				imageMat = cv::Mat(peopleInfoCount.frame.height, peopleInfoCount.frame.width, CV_8UC1, peopleInfoCount.frame.pFrameData);
+				for (int i = 0; i < peopleInfoCount.validPeopleCount; i++)
+				{
+					DrawPersonInfo2Img(imageMat, peopleInfoCount.peopleInfo[i]);
+				}
 				cv::imshow("ShowImg", imageMat);
 			}
 			else if ((true == g_bopenDoor && VzReturnStatus::VzRetDoorWasOpend == result) 
@@ -358,4 +363,60 @@ void ShowMenu(void)
 	cout << "P/p: Save image once" << endl;
 	cout << "M/m: Show menu" << endl;
 	return;
+}
+
+void DrawPersonInfo2Img(const Mat& img, const VzPeopleInfo& peopleInfo)
+{
+	if (false == img.empty())
+	{
+		Point headpoint = Point(peopleInfo.headPostion[0], peopleInfo.headPostion[1]);
+
+		int tmpx = headpoint.x - 25;
+		int tmpy = headpoint.y - 25;
+		tmpx = (tmpx < 0) ? 0 : tmpx;
+		tmpy = (tmpy < 0) ? 0 : tmpy;
+		Point LeftPoint = Point(tmpx, tmpy);
+
+		tmpx = headpoint.x + 25;
+		tmpy = headpoint.y + 25;
+		tmpx = (tmpx > img.cols) ? (img.cols) : tmpx;
+		tmpy = (tmpy > img.rows) ? (img.rows) : tmpy;
+		Point RightPoint = Point(tmpx, tmpy);
+
+		cv::rectangle(img, LeftPoint, RightPoint, Scalar(0, 0, 0), 2);
+		cv::circle(img, headpoint, 11, Scalar(0, 0, 255), -1, 8);
+
+		Point string_show_point1 = Point(headpoint.x + 25, headpoint.y - 30);
+		Point string_show_point2 = Point(headpoint.x + 25, headpoint.y - 10);
+		Point string_show_point3 = Point(headpoint.x + 25, headpoint.y +10 );
+
+		static const int BUFLEN = 50;
+		char temp[BUFLEN] = { 0 };
+		snprintf(temp, BUFLEN, "id: %X ", peopleInfo.id);
+		cv::putText(img, temp,
+			string_show_point1,
+			cv::FONT_HERSHEY_SIMPLEX,
+			0.6,
+			Scalar(0, 0, 0),
+			2,
+			9);
+
+		snprintf(temp, BUFLEN, "T: %d", peopleInfo.duration_time);
+		cv::putText(img, temp,
+			string_show_point2,
+			cv::FONT_HERSHEY_SIMPLEX,
+			0.6,
+			Scalar(0, 0, 0),
+			2,
+			9);
+
+		snprintf(temp, BUFLEN, "D: %d ", peopleInfo.distance);
+		cv::putText(img, temp,
+			string_show_point3,
+			cv::FONT_HERSHEY_SIMPLEX,
+			0.6,
+			Scalar(0, 0, 0),
+			2,
+			9);
+	}
 }

@@ -1,3 +1,7 @@
+Ver1.2.7
+1.Fix the bug that VzPeopleInfo.id is 0 in Vz_PCGetPeopleInfoCount API
+2.Moves the processing of drawing the detected person information to the image from SDK to Sample
+
 Ver1.2.6
 Change id in VzPeopleInfo struct
 
