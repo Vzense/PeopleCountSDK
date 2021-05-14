@@ -119,4 +119,11 @@ VZENSE_C_API_EXPORT VzReturnStatus Vz_PCRegUpgradeStateCallbackFunc(const VzDevi
 */
 VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetShowImg(bool isShow);
 
+/**
+*  @brief       Sets whether to save offline data
+*  @param[In]   isSaved:  true means it save offline data, false means it doesn't.
+*  @return:     ::VzRetOK	if the function succeeded, or one of the error values defined by ::VzReturnStatus.
+*/
+VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetSaveOfflineDataState(bool isSaved);
+
 #endif //VPEOPLECOUNTAPI_H

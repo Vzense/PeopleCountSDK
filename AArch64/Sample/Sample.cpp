@@ -8,7 +8,7 @@ using namespace std;
 using namespace cv;
 
 void ShowMenu(void);
-void DrawPersonInfo2Img(const Mat& img, const VzPeopleInfo& peopleInfo);
+void ShowPersonInfo(const VzPeopleInfoCount& peopleInfoCount, bool isSavingImg);
 
 enum DeviceState
 {
@@ -164,6 +164,7 @@ VzDeviceHandler g_deviceHandle = 0;
 bool g_bopenDoor = false;
 bool g_blowPower = false;
 bool g_bShowImg = true;
+bool g_bSaveImg = false;
 
 int main(int argc, char *argv[])
 {
@@ -184,7 +185,6 @@ OPEN:
 	}
 
 	VzPeopleInfoCount peopleInfoCount = {0};
-	cv::Mat imageMat;
 	while (g_isRunning)
 	{
 
@@ -206,12 +206,7 @@ OPEN:
 			if (VzReturnStatus::VzRetOK == result 
 				&& 0 != peopleInfoCount.frame.pFrameData)
 			{
-				imageMat = cv::Mat(peopleInfoCount.frame.height, peopleInfoCount.frame.width, CV_8UC1, peopleInfoCount.frame.pFrameData);
-				for (int i = 0; i < peopleInfoCount.validPeopleCount; i++)
-				{
-					DrawPersonInfo2Img(imageMat, peopleInfoCount.peopleInfo[i]);
-				}
-				cv::imshow("ShowImg", imageMat);
+				ShowPersonInfo(peopleInfoCount, g_bSaveImg);
 			}
 			else if ((true == g_bopenDoor && VzReturnStatus::VzRetDoorWasOpend == result) 
 					|| (VzReturnStatus::VzRetOK == result) 
@@ -317,11 +312,11 @@ OPEN:
 			char fileName[50] = {0};
 			static uint16_t index = 0;
 			sprintf(fileName, "%d.gray", index);
-			FILE *fprb = fopen(fileName, "wb");
-			if (fprb != 0) //> fname is path of file by const char* type
+			FILE *fp = fopen(fileName, "wb");
+			if (fp != 0) //> fname is path of file by const char* type
 			{
-				fwrite(imageMat.data, imageMat.elemSize() * imageMat.rows * imageMat.cols, 1, fprb);
-				fclose(fprb);
+				fwrite(peopleInfoCount.frame.pFrameData, peopleInfoCount.frame.dataLen, 1, fp);
+				fclose(fp);
 				index++;
 			}
 		}
@@ -333,6 +328,16 @@ OPEN:
 			ShowMenu();
 		}
 		break;
+        case 'R':
+        case 'r':
+        {
+            //Save Img
+            g_bSaveImg = !g_bSaveImg;
+            cout << ((true == g_bSaveImg) ? "start" : "stop")<<" save offline data."<<endl;
+            Vz_PCSetSaveOfflineDataState(g_bSaveImg);
+
+        }
+        break;
 		case 27: //ESC
 			g_isRunning = false;
 			break;
@@ -361,62 +366,82 @@ void ShowMenu(void)
 	cout << "O/o: Setting the opening and closing state of the refrigerator door" << endl;
 	cout << "D/d: Set dwell time threshold" << endl;
 	cout << "P/p: Save image once" << endl;
+	cout << "R/r: Swith on/off offline data storage" << endl;
 	cout << "M/m: Show menu" << endl;
 	return;
 }
 
-void DrawPersonInfo2Img(const Mat& img, const VzPeopleInfo& peopleInfo)
+void ShowPersonInfo(const VzPeopleInfoCount &peopleInfoCount, bool isSavingImg)
 {
+
+	cv::Mat img = cv::Mat(peopleInfoCount.frame.height, peopleInfoCount.frame.width, CV_8UC1, peopleInfoCount.frame.pFrameData);
 	if (false == img.empty())
 	{
-		Point headpoint = Point(peopleInfo.headPostion[0], peopleInfo.headPostion[1]);
+		if(true == isSavingImg)
+		{
+			static const int BUFLEN = 50;
+			char temp[BUFLEN] = "-REC";
+			cv::putText(img, temp,
+						cv::Point(0,20),
+						cv::FONT_HERSHEY_SIMPLEX,
+						0.6,
+						Scalar(0, 0, 0),
+						2,
+						9);
+		}
 
-		int tmpx = headpoint.x - 25;
-		int tmpy = headpoint.y - 25;
-		tmpx = (tmpx < 0) ? 0 : tmpx;
-		tmpy = (tmpy < 0) ? 0 : tmpy;
-		Point LeftPoint = Point(tmpx, tmpy);
+		for (int i = 0; i < peopleInfoCount.validPeopleCount; i++)
+		{
+			Point headpoint = Point(peopleInfoCount.peopleInfo[i].headPostion[0], peopleInfoCount.peopleInfo[i].headPostion[1]);
 
-		tmpx = headpoint.x + 25;
-		tmpy = headpoint.y + 25;
-		tmpx = (tmpx > img.cols) ? (img.cols) : tmpx;
-		tmpy = (tmpy > img.rows) ? (img.rows) : tmpy;
-		Point RightPoint = Point(tmpx, tmpy);
+			int tmpx = headpoint.x - 25;
+			int tmpy = headpoint.y - 25;
+			tmpx = (tmpx < 0) ? 0 : tmpx;
+			tmpy = (tmpy < 0) ? 0 : tmpy;
+			Point LeftPoint = Point(tmpx, tmpy);
 
-		cv::rectangle(img, LeftPoint, RightPoint, Scalar(0, 0, 0), 2);
-		cv::circle(img, headpoint, 11, Scalar(0, 0, 255), -1, 8);
+			tmpx = headpoint.x + 25;
+			tmpy = headpoint.y + 25;
+			tmpx = (tmpx > img.cols) ? (img.cols) : tmpx;
+			tmpy = (tmpy > img.rows) ? (img.rows) : tmpy;
+			Point RightPoint = Point(tmpx, tmpy);
 
-		Point string_show_point1 = Point(headpoint.x + 25, headpoint.y - 30);
-		Point string_show_point2 = Point(headpoint.x + 25, headpoint.y - 10);
-		Point string_show_point3 = Point(headpoint.x + 25, headpoint.y +10 );
+			cv::rectangle(img, LeftPoint, RightPoint, Scalar(0, 0, 0), 2);
+			cv::circle(img, headpoint, 11, Scalar(0, 0, 255), -1, 8);
 
-		static const int BUFLEN = 50;
-		char temp[BUFLEN] = { 0 };
-		snprintf(temp, BUFLEN, "id: %X ", peopleInfo.id);
-		cv::putText(img, temp,
-			string_show_point1,
-			cv::FONT_HERSHEY_SIMPLEX,
-			0.6,
-			Scalar(0, 0, 0),
-			2,
-			9);
+			Point string_show_point1 = Point(headpoint.x + 25, headpoint.y - 30);
+			Point string_show_point2 = Point(headpoint.x + 25, headpoint.y - 10);
+			Point string_show_point3 = Point(headpoint.x + 25, headpoint.y + 10);
 
-		snprintf(temp, BUFLEN, "T: %d", peopleInfo.duration_time);
-		cv::putText(img, temp,
-			string_show_point2,
-			cv::FONT_HERSHEY_SIMPLEX,
-			0.6,
-			Scalar(0, 0, 0),
-			2,
-			9);
+			static const int BUFLEN = 50;
+			char temp[BUFLEN] = {0};
+			snprintf(temp, BUFLEN, "id: %X ", peopleInfoCount.peopleInfo[i].id);
+			cv::putText(img, temp,
+						string_show_point1,
+						cv::FONT_HERSHEY_SIMPLEX,
+						0.6,
+						Scalar(0, 0, 0),
+						2,
+						9);
 
-		snprintf(temp, BUFLEN, "D: %d ", peopleInfo.distance);
-		cv::putText(img, temp,
-			string_show_point3,
-			cv::FONT_HERSHEY_SIMPLEX,
-			0.6,
-			Scalar(0, 0, 0),
-			2,
-			9);
+			snprintf(temp, BUFLEN, "T: %d", peopleInfoCount.peopleInfo[i].duration_time);
+			cv::putText(img, temp,
+						string_show_point2,
+						cv::FONT_HERSHEY_SIMPLEX,
+						0.6,
+						Scalar(0, 0, 0),
+						2,
+						9);
+
+			snprintf(temp, BUFLEN, "D: %d ", peopleInfoCount.peopleInfo[i].distance);
+			cv::putText(img, temp,
+						string_show_point3,
+						cv::FONT_HERSHEY_SIMPLEX,
+						0.6,
+						Scalar(0, 0, 0),
+						2,
+						9);
+		}
+		cv::imshow("ShowImg", img);
 	}
 }
