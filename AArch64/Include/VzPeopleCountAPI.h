@@ -126,4 +126,11 @@ VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetShowImg(bool isShow);
 */
 VZENSE_C_API_EXPORT VzReturnStatus Vz_PCSetSaveOfflineDataState(bool isSaved);
 
+/**
+*  @brief       Reset the background stored in the algorithm. The background can only be reset when the camera is in a non-low-power mode and the refrigerator door is closed.
+*  @param[In]   isSaved:  true means it save offline data, false means it doesn't.
+*  @return:     ::VzRetOK	if the function succeeded, or one of the error values defined by ::VzReturnStatus.
+*/
+VZENSE_C_API_EXPORT VzReturnStatus Vz_PCResetBackground(void);
+
 #endif //VPEOPLECOUNTAPI_H

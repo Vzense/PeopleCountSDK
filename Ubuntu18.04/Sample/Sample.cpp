@@ -97,7 +97,7 @@ public:
 			break;
 			case VZDEVICE_UPGRADE_DOING:
 			{
-				cout << "StatusCallback: DEVICE_UPGRADE_UPGRAD_DOING percent:" << params << "%" << endl;
+				cout << "StatusCallback: DEVICE_UPGRADE_DOING percent:" << params << "%" << endl;
 			}
 			break;
 			case VZDEVICE_UPGRADE_RECHECK_DOING:
@@ -112,7 +112,7 @@ public:
 			break;
 			case VZDEVICE_UPGRADE_DONE:
 			{
-				cout << "StatusCallback: DEVICE_UPGRADE_UPGRAD_DONE:" << (-1 == params ? "NG" : "OK") << ",wait for the device to reboot" << endl;
+				cout << "StatusCallback: DEVICE_UPGRADE_DONE:" << (-1 == params ? "NG" : "OK") << ",wait for the device to reboot" << endl;
 				m_DeviceState = Upgraded;
 			}
 			break;
@@ -338,6 +338,13 @@ OPEN:
 
         }
         break;
+		case 'I':
+        case 'i':
+        {
+            //reset background
+            cout <<"reset background " << (VzRetOK == Vz_PCResetBackground() ? "OK.":"NG.")<<endl;
+        }
+        break;
 		case 27: //ESC
 			g_isRunning = false;
 			break;
@@ -367,6 +374,7 @@ void ShowMenu(void)
 	cout << "D/d: Set dwell time threshold" << endl;
 	cout << "P/p: Save image once" << endl;
 	cout << "R/r: Swith on/off offline data storage" << endl;
+	cout << "I/i: Reset background" << endl;
 	cout << "M/m: Show menu" << endl;
 	return;
 }

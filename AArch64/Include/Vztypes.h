@@ -74,6 +74,7 @@ typedef enum
 struct Device;
 typedef Device* VzDeviceHandler;
 
+#pragma pack (push, 1)
 typedef struct
 {
 	uint8_t*       pFrameData;    //!< The pointer which points to the image buffer.
@@ -94,12 +95,13 @@ typedef struct
 
 typedef struct
 {
-	VzPeopleInfo        peopleInfo[20];         //Information(Up to 20) about the person being identified from the im-age.Reference VzPeopleInfo.
-	uint16_t            validPeopleCount;       //The count of people identified from the current image.
+    VzPeopleInfo        peopleInfo[20];         //Information(Up to 20) about the person being identified from the im-age.Reference VzPeopleInfo.
+    uint16_t            validPeopleCount;       //The count of people identified from the current image.
     uint16_t            dwellPeopleCount;       //The count of people who stayed longer than the dwell time threshold.
     VzPCFrame           frame;                  //The Image information is used for debugging. Available only if Vz_PCSetShowImg is set to true, otherwise empty.
 } VzPeopleInfoCount;
 
+#pragma pack (pop)
 
 /**
 * @brief device firmware upgrade state callback function

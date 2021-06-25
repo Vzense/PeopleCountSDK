@@ -1,6 +1,10 @@
+Ver1.2.10
+1.Add Vz_PCResetBackground API
+2.Optimize human body detection algorithm
+
 Ver1.2.8
-1.add Vz_PCSetSaveOfflineDataState API
-2.add OfflineTool/OfflineSample
+1.Add Vz_PCSetSaveOfflineDataState API
+2.Add OfflineTool/OfflineSample
 
 Ver1.2.7
 1.Fix the bug that VzPeopleInfo.id is 0 in Vz_PCGetPeopleInfoCount API
