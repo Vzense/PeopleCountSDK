@@ -1,3 +1,6 @@
+Ver1.2.12
+1.ptimize human body detection algorithm
+
 Ver1.2.11
 1.Fix offline file saving error
 2.Optimize human body detection algorithm
