@@ -1,3 +1,7 @@
+
+Ver1.2.14
+1.Optimize human body detection algorithm
+
 Ver1.2.12
 1.Optimize human body detection algorithm
 
